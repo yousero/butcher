@@ -26,14 +26,29 @@ class PuzzleTrainer:
         return PolicyModel(input_shape=self.input_shape)
     
     def load_puzzles(self, pgn_path, max_puzzles=10000):
+        if not os.path.exists(pgn_path):
+            raise FileNotFoundError(f"Puzzle file not found: {pgn_path}")
+            
+        if max_puzzles < 1:
+            raise ValueError("max_puzzles must be positive")
+            
         self.puzzles = load_puzzles(pgn_path, max_puzzles)
+        if not self.puzzles:
+            raise ValueError("No valid puzzles loaded")
     
     def prepare_batch(self, batch_size):
         """Prepare data batch"""
+        if not self.puzzles:
+            raise ValueError("No puzzles loaded. Call load_puzzles first.")
+            
+        if batch_size < 1:
+            raise ValueError("batch_size must be positive")
+            
         indices = np.random.choice(len(self.puzzles), batch_size)
         X = np.zeros((batch_size, *self.input_shape), dtype=np.float32)
         y = np.zeros((batch_size, self.model.policy_shape), dtype=np.float32)
         
+        valid_samples = 0
         for i, idx in enumerate(indices):
             fen, solution = self.puzzles[idx]
             try:
@@ -46,38 +61,54 @@ class PuzzleTrainer:
                     continue
                     
                 # Input data
-                X[i] = board.to_tensor()
+                X[valid_samples] = board.to_tensor()
                 
                 # Target vector
                 move_idx = self.model.move_to_index(solution, board)
                 if move_idx < self.model.policy_shape:
-                    y[i, move_idx] = 1
+                    y[valid_samples, move_idx] = 1
+                    valid_samples += 1
                     
             except Exception as e:
                 print(f"Skipping invalid puzzle: {fen} | {solution} - {str(e)}")
                 continue
         
-        return X, y
+        if valid_samples == 0:
+            raise ValueError("No valid samples in batch")
+            
+        return X[:valid_samples], y[:valid_samples]
     
     def train_epoch(self):
         """Train for one epoch"""
+        if not self.puzzles:
+            raise ValueError("No puzzles loaded. Call load_puzzles first.")
+            
         total_loss = 0
         steps = len(self.puzzles) // self.batch_size
         
         for _ in tqdm(range(steps), desc="Training"):
-            X_batch, y_batch = self.prepare_batch(self.batch_size)
-            
-            with tf.GradientTape() as tape:
-                predictions = self.model.model(X_batch, training=True)
-                loss = tf.reduce_mean(policy_crossentropy(y_batch, predictions))
-            
-            grads = tape.gradient(loss, self.model.model.trainable_variables)
-            self.optimizer.apply_gradients(
-                zip(grads, self.model.model.trainable_variables))
-            
-            total_loss += loss.numpy()
+            try:
+                X_batch, y_batch = self.prepare_batch(self.batch_size)
+                
+                with tf.GradientTape() as tape:
+                    predictions = self.model.model(X_batch, training=True)
+                    loss = tf.reduce_mean(policy_crossentropy(y_batch, predictions))
+                
+                grads = tape.gradient(loss, self.model.model.trainable_variables)
+                self.optimizer.apply_gradients(
+                    zip(grads, self.model.model.trainable_variables))
+                
+                total_loss += loss.numpy()
+            except Exception as e:
+                print(f"Error in training step: {e}")
+                continue
         
+        if steps == 0:
+            raise ValueError("No valid training steps completed")
+            
         return total_loss / steps
     
     def save_model(self, path):
+        if not path:
+            raise ValueError("Model path cannot be empty")
         self.model.save_model(path)

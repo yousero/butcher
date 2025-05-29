@@ -36,12 +36,21 @@ class PolicyModel:
         return tf.keras.Model(inputs, policy)
     
     def predict(self, board):
+        if not isinstance(board, ButcherBoard):
+            raise ValueError("Board must be an instance of ButcherBoard")
+            
         tensor = board.to_tensor()
         move_probs = self.model.predict(tensor[np.newaxis, ...], verbose=0)
         return self.decode_move(move_probs[0], board)
     
     def decode_move(self, probs, board):
+        if not isinstance(board, ButcherBoard):
+            raise ValueError("Board must be an instance of ButcherBoard")
+            
         legal_moves = list(board.generate_legal_moves())
+        if not legal_moves:
+            raise ValueError("No legal moves available")
+            
         move_indices = [self.move_to_index(m, board) for m in legal_moves]
         
         # Filter only legal moves
@@ -56,18 +65,28 @@ class PolicyModel:
     
     def move_to_index(self, move, board):
         """Convert move to index"""
+        if not isinstance(board, ButcherBoard):
+            raise ValueError("Board must be an instance of ButcherBoard")
+            
         legal_moves = list(board.generate_legal_moves())
+        if not legal_moves:
+            raise ValueError("No legal moves available")
+            
         try:
             return legal_moves.index(move)
         except ValueError:
-            # If move not found, return 0
-            return 0
+            raise ValueError(f"Illegal move: {move}")
 
     def save_model(self, path):
+        if not path:
+            raise ValueError("Model path cannot be empty")
         self.model.save(path)
     
     @staticmethod
     def load_model(path):
+        if not path:
+            raise ValueError("Model path cannot be empty")
+            
         try:
             model = PolicyModel()
             model.model = tf.keras.models.load_model(path, compile=False)

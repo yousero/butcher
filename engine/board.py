@@ -3,6 +3,9 @@ import numpy as np
 
 class ButcherBoard(chess.Board):
     def __init__(self, fen=chess.STARTING_FEN):
+        if not isinstance(fen, str):
+            raise ValueError("FEN must be a string")
+            
         try:
             # Use base constructor
             super().__init__(fen)
@@ -19,6 +22,9 @@ class ButcherBoard(chess.Board):
 
     def to_tensor(self):
         """Convert board to 8x8x18 tensor"""
+        if self.is_game_over():
+            raise ValueError("Cannot convert finished game to tensor")
+            
         tensor = np.zeros((8, 8, self.input_planes), dtype=np.float32)
         
         # Planes 0-11: Pieces (6 types × 2 colors)
@@ -60,3 +66,13 @@ class ButcherBoard(chess.Board):
     def reset(self):
         """Reset board to starting position"""
         self.set_fen(chess.STARTING_FEN)
+        
+    def push(self, move):
+        """Make a move on the board with validation"""
+        if not isinstance(move, chess.Move):
+            raise ValueError("Move must be a chess.Move instance")
+            
+        if move not in self.legal_moves:
+            raise ValueError(f"Illegal move: {move}")
+            
+        super().push(move)
