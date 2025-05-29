@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, ReLU, Flatten, Dense
+from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, ReLU, Flatten, Dense, Dropout
+from tensorflow.keras.regularizers import l2
 from engine.board import ButcherBoard
 
 class PolicyModel:
@@ -12,26 +13,34 @@ class PolicyModel:
     def build_model(self):
         inputs = Input(shape=self.input_shape)
         
-        # Block 1
-        x = Conv2D(256, 3, padding='same')(inputs)
+        # Initial normalization
+        x = BatchNormalization()(inputs)
+        
+        # Block 1 - Initial convolution
+        x = Conv2D(128, 3, padding='same', kernel_regularizer=l2(1e-4))(x)
         x = BatchNormalization()(x)
         x = ReLU()(x)
+        x = Dropout(0.1)(x)
         
-        # Residual blocks
-        for _ in range(5):
+        # Residual blocks with improved stability
+        for _ in range(3):  # Reduced number of blocks
             residual = x
-            x = Conv2D(256, 3, padding='same')(x)
+            x = Conv2D(128, 3, padding='same', kernel_regularizer=l2(1e-4))(x)
             x = BatchNormalization()(x)
             x = ReLU()(x)
-            x = Conv2D(256, 3, padding='same')(x)
+            x = Dropout(0.1)(x)
+            x = Conv2D(128, 3, padding='same', kernel_regularizer=l2(1e-4))(x)
             x = BatchNormalization()(x)
             x = tf.keras.layers.add([x, residual])
             x = ReLU()(x)
         
-        # Policy head
-        policy = Conv2D(128, 1, activation='relu')(x)
+        # Policy head with improved stability
+        policy = Conv2D(64, 1, activation='relu', kernel_regularizer=l2(1e-4))(x)
+        policy = BatchNormalization()(policy)
         policy = Flatten()(policy)
-        policy = Dense(self.policy_shape, activation='softmax', name='policy')(policy)
+        policy = Dropout(0.2)(policy)
+        policy = Dense(self.policy_shape, activation='softmax', name='policy',
+                      kernel_regularizer=l2(1e-4))(policy)
         
         return tf.keras.Model(inputs, policy)
     

@@ -11,11 +11,14 @@ class PuzzleTrainer:
     def __init__(self, model_path=None):
         self.model = self.load_or_create_model(model_path)
         self.optimizer = tf.keras.optimizers.Adam(
-            learning_rate=0.0001,
-            clipnorm=1.0
+            learning_rate=0.00001,
+            clipnorm=0.5,
+            beta_1=0.9,
+            beta_2=0.999,
+            epsilon=1e-7
         )
         self.puzzles = []
-        self.batch_size = 64
+        self.batch_size = 32
         self.input_shape = (8, 8, 18)  # Important: must match board.py!
     
     def load_or_create_model(self, path):
@@ -40,7 +43,7 @@ class PuzzleTrainer:
             raise ValueError("No valid puzzles loaded")
     
     def prepare_batch(self, batch_size):
-        """Prepare data batch"""
+        """Prepare data batch with additional validation"""
         if not self.puzzles:
             raise ValueError("No puzzles loaded. Call load_puzzles first.")
             
@@ -60,13 +63,17 @@ class PuzzleTrainer:
                 
                 # Check if move is legal
                 if solution not in board.legal_moves:
-                    # Skip example if move is illegal
                     continue
                     
-                # Input data
-                X[valid_samples] = board.to_tensor()
+                # Input data with validation
+                board_tensor = board.to_tensor()
+                if np.any(np.isnan(board_tensor)):
+                    print(f"Warning: NaN detected in board tensor for FEN: {fen}")
+                    continue
+                    
+                X[valid_samples] = board_tensor
                 
-                # Target vector
+                # Target vector with validation
                 move_idx = self.model.move_to_index(solution, board)
                 if move_idx < self.model.policy_shape:
                     y[valid_samples, move_idx] = 1
@@ -82,7 +89,7 @@ class PuzzleTrainer:
         return X[:valid_samples], y[:valid_samples]
     
     def train_epoch(self):
-        """Train for one epoch"""
+        """Train for one epoch with improved stability"""
         if not self.puzzles:
             raise ValueError("No puzzles loaded. Call load_puzzles first.")
             
@@ -94,8 +101,19 @@ class PuzzleTrainer:
             try:
                 X_batch, y_batch = self.prepare_batch(self.batch_size)
                 
+                # Validate input data
+                if np.any(np.isnan(X_batch)) or np.any(np.isnan(y_batch)):
+                    print("Warning: NaN detected in batch data, skipping")
+                    continue
+                
                 with tf.GradientTape() as tape:
                     predictions = self.model.model(X_batch, training=True)
+                    
+                    # Validate predictions
+                    if tf.reduce_any(tf.math.is_nan(predictions)):
+                        print("Warning: NaN detected in model predictions, skipping batch")
+                        continue
+                        
                     loss = tf.reduce_mean(policy_crossentropy(y_batch, predictions))
                 
                 if tf.math.is_nan(loss):
@@ -104,12 +122,22 @@ class PuzzleTrainer:
                 
                 grads = tape.gradient(loss, self.model.model.trainable_variables)
                 
-                if any(tf.reduce_any(tf.math.is_nan(grad)) for grad in grads if grad is not None):
+                # More thorough gradient validation
+                if any(grad is None for grad in grads):
+                    print("Warning: None gradients detected, skipping batch")
+                    continue
+                    
+                if any(tf.reduce_any(tf.math.is_nan(grad)) for grad in grads):
                     print("Warning: NaN gradients detected, skipping batch")
                     continue
                 
-                self.optimizer.apply_gradients(
-                    zip(grads, self.model.model.trainable_variables))
+                # Apply gradients with validation
+                try:
+                    self.optimizer.apply_gradients(
+                        zip(grads, self.model.model.trainable_variables))
+                except Exception as e:
+                    print(f"Warning: Error applying gradients: {e}")
+                    continue
                 
                 total_loss += loss.numpy()
                 valid_steps += 1
