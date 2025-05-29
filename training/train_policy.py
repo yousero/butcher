@@ -1,10 +1,10 @@
 import numpy as np
 import tensorflow as tf
+import os
 from tqdm import tqdm
 from .puzzle_loader import load_puzzles
 from engine.board import ButcherBoard
 from engine.nn_model import PolicyModel
-from .losses import policy_crossentropy
 
 class PuzzleTrainer:
     def __init__(self, model_path=None):
@@ -12,14 +12,17 @@ class PuzzleTrainer:
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
         self.puzzles = []
         self.batch_size = 128
+        self.input_shape = (8, 8, 18)  # Важно: должно соответствовать board.py!
     
     def load_or_create_model(self, path):
-        if path:
+        if path and os.path.exists(path):
             try:
                 return PolicyModel.load_model(path)
-            except:
-                print(f"Model not found at {path}, creating new model")
-        return PolicyModel()
+            except Exception as e:
+                print(f"Error loading model: {e}")
+        
+        print("Creating new model")
+        return PolicyModel(input_shape=self.input_shape)
     
     def load_puzzles(self, pgn_path, max_puzzles=10000):
         self.puzzles = load_puzzles(pgn_path, max_puzzles)
@@ -27,24 +30,22 @@ class PuzzleTrainer:
     def prepare_batch(self, batch_size):
         """Подготовка батча данных"""
         indices = np.random.choice(len(self.puzzles), batch_size)
-        X = []
-        y = []
+        X = np.zeros((batch_size, *self.input_shape), dtype=np.float32)
+        y = np.zeros((batch_size, self.model.policy_shape), dtype=np.float32)
         
-        for idx in indices:
+        for i, idx in enumerate(indices):
             fen, solution = self.puzzles[idx]
             board = ButcherBoard(fen)
             
             # Входные данные
-            X.append(board.to_tensor())
+            X[i] = board.to_tensor()
             
             # Целевой вектор
-            target = np.zeros(self.model.policy_shape, dtype=np.float32)
             move_idx = self.model.move_to_index(solution, board)
             if move_idx < self.model.policy_shape:
-                target[move_idx] = 1
-            y.append(target)
+                y[i, move_idx] = 1
         
-        return np.array(X), np.array(y)
+        return X, y
     
     def train_epoch(self):
         """Обучение на одной эпохе"""

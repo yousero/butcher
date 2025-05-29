@@ -3,7 +3,11 @@ import numpy as np
 
 class ButcherBoard(chess.Board):
     def __init__(self, fen=chess.STARTING_FEN):
-        super().__init__(fen)
+        try:
+            super().__init__(fen)
+        except ValueError:
+            super().__init__(chess.STARTING_FEN)
+            print(f"Invalid FEN, using default: {fen}")
         self.input_planes = 18
     
     def to_tensor(self):

@@ -1,9 +1,11 @@
 import chess.pgn
 import os
+import chess
 
 def load_puzzles(pgn_path, max_puzzles=None):
     puzzles = []
     count = 0
+    invalid_count = 0
     
     with open(pgn_path) as pgn_file:
         while True:
@@ -14,18 +16,30 @@ def load_puzzles(pgn_path, max_puzzles=None):
             if game is None:
                 break
                 
-            # Извлекаем решение из первого комментария
-            solution = None
-            node = game
-            while node:
-                if node.variations:
-                    solution = node.variations[0].move
-                    break
-                node = node.next()
-            
-            if solution and game.board().is_legal(solution):
-                puzzles.append((game.board().fen(), solution))
-                count += 1
+            try:
+                # Validate FEN
+                board = game.board()
+                test_board = chess.Board(board.fen())
+                
+                # Extract solution
+                solution = None
+                node = game
+                while node:
+                    if node.variations:
+                        solution = node.variations[0].move
+                        break
+                    node = node.next()
+                
+                # Validate move
+                if solution and test_board.is_legal(solution):
+                    puzzles.append((board.fen(), solution))
+                    count += 1
+                else:
+                    invalid_count += 1
+                    
+            except ValueError as e:
+                invalid_count += 1
+                continue
     
-    print(f"Loaded {len(puzzles)} puzzles from {os.path.basename(pgn_path)}")
+    print(f"Loaded {len(puzzles)} valid puzzles, skipped {invalid_count} invalid from {os.path.basename(pgn_path)}")
     return puzzles

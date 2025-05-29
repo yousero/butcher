@@ -55,10 +55,13 @@ class PolicyModel:
         return next(m for m in legal_moves if self.move_to_index(m, board) == move_idx)
     
     def move_to_index(self, move, board):
-        """Конвертация хода в индекс (упрощенная реализация)"""
-        from_sq = move.from_square
-        to_sq = move.to_square
-        return from_sq * 64 + to_sq
+        """Конвертация хода в индекс (исправленная реализация)"""
+        # Создаем все возможные ходы
+        legal_moves = list(board.generate_legal_moves())
+        try:
+            return legal_moves.index(move)
+        except ValueError:
+            return 0
 
     def save_model(self, path):
         self.model.save(path)
