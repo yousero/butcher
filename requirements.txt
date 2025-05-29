@@ -1,0 +1,5 @@
+tensorflow>=2.12
+numpy>=1.24
+python-chess
+tqdm
+pyyaml
