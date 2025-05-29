@@ -10,9 +10,12 @@ from training.losses import policy_crossentropy
 class PuzzleTrainer:
     def __init__(self, model_path=None):
         self.model = self.load_or_create_model(model_path)
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+        self.optimizer = tf.keras.optimizers.Adam(
+            learning_rate=0.0001,
+            clipnorm=1.0
+        )
         self.puzzles = []
-        self.batch_size = 128
+        self.batch_size = 64
         self.input_shape = (8, 8, 18)  # Important: must match board.py!
     
     def load_or_create_model(self, path):
@@ -85,6 +88,7 @@ class PuzzleTrainer:
             
         total_loss = 0
         steps = len(self.puzzles) // self.batch_size
+        valid_steps = 0
         
         for _ in tqdm(range(steps), desc="Training"):
             try:
@@ -94,19 +98,30 @@ class PuzzleTrainer:
                     predictions = self.model.model(X_batch, training=True)
                     loss = tf.reduce_mean(policy_crossentropy(y_batch, predictions))
                 
+                if tf.math.is_nan(loss):
+                    print("Warning: NaN loss detected, skipping batch")
+                    continue
+                
                 grads = tape.gradient(loss, self.model.model.trainable_variables)
+                
+                if any(tf.reduce_any(tf.math.is_nan(grad)) for grad in grads if grad is not None):
+                    print("Warning: NaN gradients detected, skipping batch")
+                    continue
+                
                 self.optimizer.apply_gradients(
                     zip(grads, self.model.model.trainable_variables))
                 
                 total_loss += loss.numpy()
+                valid_steps += 1
+                
             except Exception as e:
                 print(f"Error in training step: {e}")
                 continue
         
-        if steps == 0:
+        if valid_steps == 0:
             raise ValueError("No valid training steps completed")
             
-        return total_loss / steps
+        return total_loss / valid_steps
     
     def save_model(self, path):
         if not path:
