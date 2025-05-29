@@ -2,10 +2,10 @@ import sys
 import os
 import argparse
 
-# Добавляем корень проекта в sys.path
+# Add project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Теперь можно импортировать модули из проекта
+# Now we can import project modules
 from training.train_policy import PuzzleTrainer
 
 def main():

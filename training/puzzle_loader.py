@@ -19,10 +19,10 @@ def load_puzzles(pgn_path, max_puzzles=None):
             try:
                 board = game.board()
                 
-                # Проверка валидности FEN
+                # Validate FEN
                 test_board = chess.Board(board.fen())
                 
-                # Извлекаем решение
+                # Extract solution
                 solution = None
                 node = game
                 while node:
@@ -31,7 +31,7 @@ def load_puzzles(pgn_path, max_puzzles=None):
                         break
                     node = node.next()
                 
-                # Проверка валидности хода
+                # Validate move
                 if solution and test_board.is_legal(solution):
                     puzzles.append((board.fen(), solution))
                     count += 1

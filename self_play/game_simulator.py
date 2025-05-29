@@ -8,7 +8,7 @@ class SelfPlay:
         self.max_moves = max_moves
     
     def simulate_game(self, max_moves=None):
-        """Симуляция одной игры между двумя копиями ИИ"""
+        """Simulate one game between two AI copies"""
         if max_moves is None:
             max_moves = self.max_moves
         
@@ -17,13 +17,13 @@ class SelfPlay:
         move_count = 0
         
         while not board.is_game_over() and move_count < max_moves:
-            # Предсказание хода
+            # Predict move
             move = self.model.predict(board)
             
-            # Сохранение состояния
+            # Save state
             game_history.append((board.fen(), move))
             
-            # Применение хода
+            # Apply move
             board.push(move)
             move_count += 1
         

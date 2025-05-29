@@ -13,7 +13,7 @@ class PuzzleTrainer:
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
         self.puzzles = []
         self.batch_size = 128
-        self.input_shape = (8, 8, 18)  # Важно: должно соответствовать board.py!
+        self.input_shape = (8, 8, 18)  # Important: must match board.py!
     
     def load_or_create_model(self, path):
         if path and os.path.exists(path):
@@ -29,7 +29,7 @@ class PuzzleTrainer:
         self.puzzles = load_puzzles(pgn_path, max_puzzles)
     
     def prepare_batch(self, batch_size):
-        """Подготовка батча данных"""
+        """Prepare data batch"""
         indices = np.random.choice(len(self.puzzles), batch_size)
         X = np.zeros((batch_size, *self.input_shape), dtype=np.float32)
         y = np.zeros((batch_size, self.model.policy_shape), dtype=np.float32)
@@ -37,18 +37,18 @@ class PuzzleTrainer:
         for i, idx in enumerate(indices):
             fen, solution = self.puzzles[idx]
             try:
-                # Создаем доску с валидацией FEN
+                # Create board with FEN validation
                 board = ButcherBoard(fen)
                 
-                # Проверяем, что ход легальный
+                # Check if move is legal
                 if solution not in board.legal_moves:
-                    # Если ход нелегальный, пропускаем пример
+                    # Skip example if move is illegal
                     continue
                     
-                # Входные данные
+                # Input data
                 X[i] = board.to_tensor()
                 
-                # Целевой вектор
+                # Target vector
                 move_idx = self.model.move_to_index(solution, board)
                 if move_idx < self.model.policy_shape:
                     y[i, move_idx] = 1
@@ -60,7 +60,7 @@ class PuzzleTrainer:
         return X, y
     
     def train_epoch(self):
-        """Обучение на одной эпохе"""
+        """Train for one epoch"""
         total_loss = 0
         steps = len(self.puzzles) // self.batch_size
         

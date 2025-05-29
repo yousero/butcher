@@ -9,14 +9,14 @@ class DataGenerator:
         self.simulator = SelfPlay(model_path)
     
     def generate_games(self, num_games, max_moves=200):
-        """Генерация игровых данных"""
+        """Generate game data"""
         training_data = []
         
         for game_idx in tqdm(range(num_games), desc="Generating games"):
-            # Симуляция одной игры
+            # Simulate one game
             game_history = self.simulator.simulate_game(max_moves)
             
-            # Сохраняем все позиции и ходы из игры
+            # Save all positions and moves from the game
             for fen, move in game_history:
                 board = ButcherBoard(fen)
                 training_data.append({

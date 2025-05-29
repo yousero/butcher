@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-# Добавляем корень проекта в путь
+# Add project root to path
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -18,10 +18,10 @@ def training_loop(initial_model="models/initial.h5",
                   epochs_per_iter=5,
                   output_dir="models"):
     
-    # Создаем директорию для моделей, если не существует
+    # Create models directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
-    # Проверяем начальную модель
+    # Check initial model
     if not os.path.exists(initial_model):
         print(f"Initial model not found at {initial_model}, creating new model...")
         model = PolicyModel()
@@ -34,13 +34,13 @@ def training_loop(initial_model="models/initial.h5",
     for iteration in range(iterations):
         print(f"\n=== Iteration {iteration+1}/{iterations} ===")
         
-        # 1. Самоигра: генерация данных
+        # 1. Self-play: generate data
         print(f"Generating {games_per_iter} self-play games...")
         generator = DataGenerator(current_model)
         training_data = generator.generate_games(games_per_iter)
         print(f"Generated {len(training_data)} training positions")
         
-        # 2. Обучение на новых данных
+        # 2. Train on new data
         trainer = SelfPlayTrainer(current_model)
         new_model_path = os.path.join(output_dir, f"iter_{iteration+1}.h5")
         
@@ -49,7 +49,7 @@ def training_loop(initial_model="models/initial.h5",
         trainer.save_model(new_model_path)
         print(f"Model saved to {new_model_path}")
         
-        # 3. Обновление модели для следующей итерации
+        # 3. Update model for next iteration
         current_model = new_model_path
     
     print("\nTraining completed!")

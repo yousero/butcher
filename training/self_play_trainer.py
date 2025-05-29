@@ -11,15 +11,15 @@ class SelfPlayTrainer:
         self.batch_size = 128
     
     def train(self, training_data, epochs=5):
-        """Обучение на данных самоигры"""
-        # Преобразование данных в тензоры
+        """Training on self-play data"""
+        # Convert data to tensors
         X, y = self.prepare_data(training_data)
         
-        # Создание TensorFlow Dataset
+        # Create TensorFlow Dataset
         dataset = tf.data.Dataset.from_tensor_slices((X, y))
         dataset = dataset.shuffle(buffer_size=len(X)).batch(self.batch_size)
         
-        # Цикл обучения по эпохам
+        # Training loop over epochs
         for epoch in range(1, epochs + 1):
             epoch_loss = 0
             num_batches = 0
@@ -33,32 +33,32 @@ class SelfPlayTrainer:
             print(f"Epoch {epoch} completed - Avg Loss: {avg_loss:.4f}")
     
     def train_step(self, X_batch, y_batch):
-        """Один шаг обучения"""
+        """Single training step"""
         with tf.GradientTape() as tape:
-            # Предсказание модели
+            # Model prediction
             predictions = self.model.model(X_batch, training=True)
             
-            # Расчет потерь
+            # Calculate loss
             loss = self.loss_fn(y_batch, predictions)
         
-        # Вычисление градиентов и обновление весов
+        # Compute gradients and update weights
         grads = tape.gradient(loss, self.model.model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.model.model.trainable_variables))
         
         return loss.numpy()
     
     def prepare_data(self, training_data):
-        """Подготовка данных для обучения"""
+        """Prepare data for training"""
         X = []
         y = []
         
         for data_point in training_data:
-            # Извлекаем данные
+            # Extract data
             board_tensor = data_point['board_tensor']
             move = data_point['best_move']
             fen = data_point['fen']
             
-            # Создаем целевой вектор
+            # Create target vector
             target = np.zeros(self.model.policy_shape, dtype=np.float32)
             move_idx = self.model.move_to_index(move, fen)
             if move_idx < self.model.policy_shape:
@@ -70,5 +70,5 @@ class SelfPlayTrainer:
         return np.array(X), np.array(y)
     
     def save_model(self, path):
-        """Сохраняем модель"""
+        """Save the model"""
         self.model.save_model(path)
