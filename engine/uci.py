@@ -12,7 +12,11 @@ class ButcherEngine:
         self.thinking_time = 1.0  # Default thinking time in seconds
     
     def set_position(self, fen=chess.STARTING_FEN):
-        self.board.set_fen(fen)
+        try:
+            self.board.set_fen(fen)
+        except ValueError:
+            print(f"Invalid FEN: {fen}, using default")
+            self.board.set_fen(chess.STARTING_FEN)
     
     def get_best_move(self):
         """Get best move from neural network with timing"""

@@ -5,6 +5,7 @@ from tqdm import tqdm
 from .puzzle_loader import load_puzzles
 from engine.board import ButcherBoard
 from engine.nn_model import PolicyModel
+from training.losses import policy_crossentropy
 
 class PuzzleTrainer:
     def __init__(self, model_path=None):
@@ -35,15 +36,26 @@ class PuzzleTrainer:
         
         for i, idx in enumerate(indices):
             fen, solution = self.puzzles[idx]
-            board = ButcherBoard(fen)
-            
-            # Входные данные
-            X[i] = board.to_tensor()
-            
-            # Целевой вектор
-            move_idx = self.model.move_to_index(solution, board)
-            if move_idx < self.model.policy_shape:
-                y[i, move_idx] = 1
+            try:
+                # Создаем доску с валидацией FEN
+                board = ButcherBoard(fen)
+                
+                # Проверяем, что ход легальный
+                if solution not in board.legal_moves:
+                    # Если ход нелегальный, пропускаем пример
+                    continue
+                    
+                # Входные данные
+                X[i] = board.to_tensor()
+                
+                # Целевой вектор
+                move_idx = self.model.move_to_index(solution, board)
+                if move_idx < self.model.policy_shape:
+                    y[i, move_idx] = 1
+                    
+            except Exception as e:
+                print(f"Skipping invalid puzzle: {fen} | {solution} - {str(e)}")
+                continue
         
         return X, y
     

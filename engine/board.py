@@ -4,12 +4,17 @@ import numpy as np
 class ButcherBoard(chess.Board):
     def __init__(self, fen=chess.STARTING_FEN):
         try:
+            # Используем базовый конструктор
             super().__init__(fen)
         except ValueError:
+            # В случае ошибки используем стартовую позицию
             super().__init__(chess.STARTING_FEN)
-            print(f"Invalid FEN, using default: {fen}")
-        self.input_planes = 18
+            print(f"Invalid FEN: {fen}, using default")
     
+    @property
+    def input_planes(self):
+        return 18
+
     def to_tensor(self):
         """Конвертация доски в 8x8x18 тензор"""
         tensor = np.zeros((8, 8, self.input_planes), dtype=np.float32)
@@ -30,33 +35,26 @@ class ButcherBoard(chess.Board):
             plane = piece_map[piece.piece_type] + plane_offset
             tensor[row, col, plane] = 1
         
-        # Плоскость 12: Двойные ходы пешек
-        if self.ep_square:
+        # Плоскость 12: Двойные ходы пешек (битое поле)
+        if self.ep_square is not None:
             ep_row, ep_col = 7 - self.ep_square // 8, self.ep_square % 8
             tensor[ep_row, ep_col, 12] = 1
         
-        # Плоскость 13: Рокировки (белые короткие)
+        # Плоскости 13-16: Рокировочные права
+        # Плоскость 13: белые короткие
         tensor[:, :, 13] = self.has_kingside_castling_rights(chess.WHITE)
-        
-        # Плоскость 14: Рокировки (белые длинные)
+        # Плоскость 14: белые длинные
         tensor[:, :, 14] = self.has_queenside_castling_rights(chess.WHITE)
-        
-        # Плоскость 15: Рокировки (черные короткие)
+        # Плоскость 15: черные короткие
         tensor[:, :, 15] = self.has_kingside_castling_rights(chess.BLACK)
-        
-        # Плоскость 16: Рокировки (черные длинные)
+        # Плоскость 16: черные длинные
         tensor[:, :, 16] = self.has_queenside_castling_rights(chess.BLACK)
         
-        # Плоскость 17: Цвет хода (0=белые, 1=черные)
-        tensor[:, :, 17] = int(self.turn == chess.BLACK)
+        # Плоскость 17: Цвет хода (0 - белые, 1 - черные)
+        tensor[:, :, 17] = 1 if self.turn == chess.BLACK else 0
         
         return tensor
 
     def reset(self):
+        """Сброс доски к начальной позиции"""
         self.set_fen(chess.STARTING_FEN)
-    
-    def set_fen(self, fen):
-        super().__init__(fen)
-    
-    def __str__(self):
-        return super().__str__()

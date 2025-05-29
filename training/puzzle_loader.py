@@ -17,11 +17,12 @@ def load_puzzles(pgn_path, max_puzzles=None):
                 break
                 
             try:
-                # Validate FEN
                 board = game.board()
+                
+                # Проверка валидности FEN
                 test_board = chess.Board(board.fen())
                 
-                # Extract solution
+                # Извлекаем решение
                 solution = None
                 node = game
                 while node:
@@ -30,14 +31,14 @@ def load_puzzles(pgn_path, max_puzzles=None):
                         break
                     node = node.next()
                 
-                # Validate move
+                # Проверка валидности хода
                 if solution and test_board.is_legal(solution):
                     puzzles.append((board.fen(), solution))
                     count += 1
                 else:
                     invalid_count += 1
                     
-            except ValueError as e:
+            except (ValueError, AssertionError) as e:
                 invalid_count += 1
                 continue
     
