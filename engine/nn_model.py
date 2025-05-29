@@ -54,13 +54,14 @@ class PolicyModel:
         move_idx = np.argmax(legal_probs)
         return next(m for m in legal_moves if self.move_to_index(m, board) == move_idx)
     
-    def move_to_index(self, move, board):
+    def move_to_index(self, move, fen):
         """Конвертация хода в индекс (исправленная реализация)"""
-        # Создаем все возможные ходы
+        board = ButcherBoard(fen)
         legal_moves = list(board.generate_legal_moves())
         try:
             return legal_moves.index(move)
         except ValueError:
+            # Если ход не найден, возвращаем 0
             return 0
 
     def save_model(self, path):

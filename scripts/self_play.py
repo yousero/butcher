@@ -1,6 +1,11 @@
-from self_play.game_simulator import SelfPlay
+import os
+import sys
 import argparse
 import chess.pgn
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from self_play.game_simulator import SelfPlay
 
 def main():
     parser = argparse.ArgumentParser(description='Self-play simulation')
