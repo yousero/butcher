@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 from engine.nn_model import PolicyModel
+from engine.board import ButcherBoard
 
 class SelfPlayTrainer:
     def __init__(self, model_path):
@@ -60,7 +61,7 @@ class SelfPlayTrainer:
             
             # Create target vector
             target = np.zeros(self.model.policy_shape, dtype=np.float32)
-            move_idx = self.model.move_to_index(move, fen)
+            move_idx = self.model.move_to_index(move, ButcherBoard(fen))
             if move_idx < self.model.policy_shape:
                 target[move_idx] = 1
             

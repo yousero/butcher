@@ -57,7 +57,7 @@ def training_loop(initial_model="models/initial.h5",
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Self-play training loop')
-    parser.add_argument('--initial_model', type=str, default="models/initial.h5", 
+    parser.add_argument('--initial_model', type=str, default="models/policy_net.h5", 
                         help='Path to initial model')
     parser.add_argument('--iterations', type=int, default=10, 
                         help='Number of training iterations')
