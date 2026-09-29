@@ -70,7 +70,6 @@ class PuzzleTrainer:
                 X[valid] = t
                 y[valid, mi] = 1.0
                 M[valid] = legal_move_mask(board)
-                # гарантируем, что маска содержит правильный ход
                 M[valid, mi] = True
                 valid += 1
             except Exception as e:

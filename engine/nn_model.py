@@ -14,7 +14,7 @@ from engine.move_encoding import (
 )
 
 
-NEG_INF = -1e9  # вместо -inf, чтобы не ловить NaN в softmax
+NEG_INF = -1e9
 
 
 class PolicyModel:
