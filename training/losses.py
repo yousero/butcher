@@ -1,21 +1,23 @@
 import tensorflow as tf
 
-def policy_crossentropy(y_true, y_pred):
-    """Policy loss function with improved numerical stability"""
-    # Normalize predictions to sum to 1
-    y_pred = tf.nn.softmax(y_pred, axis=-1)
-    
-    # Clip predictions to avoid log(0) with larger epsilon
-    y_pred = tf.clip_by_value(y_pred, 1e-5, 1.0 - 1e-5)
-    
-    # Add epsilon to avoid numerical instability
-    epsilon = 1e-5
-    y_pred = tf.clip_by_value(y_pred, epsilon, 1.0 - epsilon)
-    
-    # Calculate cross entropy with label smoothing
-    smoothing = 0.1
-    y_true = y_true * (1 - smoothing) + smoothing / tf.cast(tf.shape(y_true)[-1], tf.float32)
-    
-    # Calculate cross entropy
-    return tf.keras.losses.categorical_crossentropy(
-        y_true, y_pred, from_logits=False)
+NEG_INF = -1e9
+
+
+def masked_policy_loss(y_true, logits, legal_mask):
+    """Cross-entropy по логитам с маской легальных ходов.
+
+    y_true:     (B, POLICY_SIZE) one-hot
+    logits:     (B, POLICY_SIZE)
+    legal_mask: (B, POLICY_SIZE) bool
+    """
+    logits = tf.where(legal_mask, logits, tf.fill(tf.shape(logits), NEG_INF))
+
+    # label smoothing
+    smoothing = 0.05
+    n = tf.cast(tf.shape(y_true)[-1], tf.float32)
+    y_true = y_true * (1.0 - smoothing) + smoothing / n
+
+    # log_softmax вручную, чтобы не ловить NaN
+    log_probs = tf.nn.log_softmax(logits, axis=-1)
+    loss = -tf.reduce_sum(y_true * log_probs, axis=-1)
+    return loss
