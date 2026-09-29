@@ -1,11 +1,3 @@
-"""
-Конвертер Lichess puzzle CSV → PGN, совместимый с training/puzzle_loader.py.
-
-Берёт первый ход из Moves как "решение" для позиции FEN.
-
-Использование:
-    python scripts/lichess_to_pgn.py lichess_db_puzzle.csv data/puzzles.pgn --max 20000
-"""
 import argparse
 import csv
 import os
@@ -51,7 +43,6 @@ def convert(csv_path, pgn_path, max_puzzles=None, min_rating=None, max_rating=No
                 skipped += 1
                 continue
 
-            # Первый ход в Moves — решение для позиции FEN
             try:
                 sol = chess.Move.from_uci(moves[0])
             except ValueError:
@@ -69,7 +60,7 @@ def convert(csv_path, pgn_path, max_puzzles=None, min_rating=None, max_rating=No
             game.headers["Rating"] = str(rating)
             game.headers["Themes"] = row.get("Themes", "")
             node = game.add_variation(sol)
-            # Опционально: дописать остальные ходы решения
+
             for mv_uci in moves[1:]:
                 try:
                     node = node.add_variation(chess.Move.from_uci(mv_uci))
@@ -78,7 +69,7 @@ def convert(csv_path, pgn_path, max_puzzles=None, min_rating=None, max_rating=No
             fout.write(str(game) + "\n\n")
             written += 1
 
-    print(f"Готово: {written} задач записано в {pgn_path}, пропущено {skipped}")
+    print(f"Ready: {written} wrote to {pgn_path}, skipped {skipped}")
 
 
 if __name__ == "__main__":
@@ -89,7 +80,7 @@ if __name__ == "__main__":
     ap.add_argument("--min-rating", type=int, default=None)
     ap.add_argument("--max-rating", type=int, default=None)
     ap.add_argument("--themes", nargs="*", default=None,
-                    help="например: mate mateIn1 mateIn2 endgame")
+                    help="example: mate mateIn1 mateIn2 endgame")
     args = ap.parse_args()
     convert(args.csv_path, args.pgn_path, args.max,
             args.min_rating, args.max_rating, args.themes)

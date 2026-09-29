@@ -4,13 +4,6 @@ NEG_INF = -1e9
 
 
 def masked_policy_loss(y_true, logits, legal_mask):
-    """Cross-entropy по логитам с маской легальных ходов.
-
-    y_true:     (B, POLICY_SIZE) one-hot по легальному ходу
-    logits:     (B, POLICY_SIZE)
-    legal_mask: (B, POLICY_SIZE) bool
-    """
-    # Маскируем нелегальные логиты
     logits = tf.where(
         legal_mask,
         logits,
@@ -19,8 +12,6 @@ def masked_policy_loss(y_true, logits, legal_mask):
 
     log_probs = tf.nn.log_softmax(logits, axis=-1)
 
-    # Label smoothing ТОЛЬКО среди легальных ходов:
-    #   target = (1 - eps) * one_hot + eps / n_legal * legal_mask
     smoothing = 0.05
     n_legal = tf.reduce_sum(
         tf.cast(legal_mask, logits.dtype), axis=-1, keepdims=True
