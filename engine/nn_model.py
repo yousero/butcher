@@ -43,7 +43,6 @@ class PolicyModel:
             x = tf.keras.layers.add([x, residual])
             x = ReLU()(x)
 
-        # Policy head БЕЗ softmax — логиты
         policy = Conv2D(64, 1, activation="relu",
                         kernel_regularizer=l2(1e-4))(x)
         policy = BatchNormalization()(policy)
@@ -63,7 +62,6 @@ class PolicyModel:
         return self.model.predict(tensor[np.newaxis, ...], verbose=0)[0]
 
     def predict_probs(self, board: ButcherBoard) -> np.ndarray:
-        """Вероятности с маской нелегальных ходов."""
         logits = self.predict_logits(board)
         mask = legal_move_mask(board)
         logits = np.where(mask, logits, NEG_INF)
