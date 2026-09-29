@@ -9,7 +9,7 @@ from self_play.game_simulator import SelfPlay
 
 def main():
     parser = argparse.ArgumentParser(description='Self-play simulation')
-    parser.add_argument('--model', type=str, default="models/policy_net.h5", help='Path to model')
+    parser.add_argument('--model', type=str, default="models/policy_net.keras", help='Path to model')
     parser.add_argument('--games', type=int, default=10, help='Number of games to play')
     parser.add_argument('--output', type=str, default="self_play.pgn", help='Output PGN file')
     args = parser.parse_args()

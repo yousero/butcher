@@ -10,7 +10,7 @@ def main():
     os.makedirs(model_dir, exist_ok=True)
     
     model = PolicyModel()
-    model_path = os.path.join(model_dir, "policy_net.h5")
+    model_path = os.path.join(model_dir, "policy_net.keras")
     model.model.save(model_path)
     print(f"Initial model created at {model_path}")
 

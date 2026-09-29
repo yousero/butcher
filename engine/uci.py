@@ -6,7 +6,7 @@ from .board import ButcherBoard
 from .nn_model import PolicyModel
 
 class ButcherEngine:
-    def __init__(self, model_path="models/policy_net.h5"):
+    def __init__(self, model_path="models/policy_net.keras"):
         self.board = ButcherBoard()
         self.model = PolicyModel.load_model(model_path)
         self.thinking_time = 1.0  # Default thinking time in seconds
@@ -103,13 +103,13 @@ class ButcherEngine:
         """Respond to UCI initialization"""
         print("id name Butcher Chess Engine")
         print("id author YourName")
-        print("option name ModelPath type string default models/policy_net.h5")
+        print("option name ModelPath type string default models/policy_net.keras")
         print("option name ThinkingTime type spin default 1000 min 10 max 60000")
         print("uciok")
 
 def main():
     parser = argparse.ArgumentParser(description='Butcher Chess Engine (UCI)')
-    parser.add_argument('--model', type=str, default="models/policy_net.h5", 
+    parser.add_argument('--model', type=str, default="models/policy_net.keras", 
                         help='Path to the model file')
     args = parser.parse_args()
     

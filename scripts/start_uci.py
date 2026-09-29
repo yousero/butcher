@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from engine.uci import ButcherEngine
 
 if __name__ == "__main__":
-    model_path = "models/policy_net.h5"
+    model_path = "models/policy_net.keras"
     if len(sys.argv) > 1:
         model_path = sys.argv[1]
     

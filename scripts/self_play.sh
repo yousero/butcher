@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MODEL_PATH=${1:-"models/trained_policy_net.h5"}
+MODEL_PATH=${1:-"models/trained_policy_net.keras"}
 NUM_GAMES=${2:-100}
 OUTPUT_DIR=${3:-"data/self_play"}
 

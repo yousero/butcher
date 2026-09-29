@@ -11,10 +11,10 @@ from training.train_policy import PuzzleTrainer
 def main():
     parser = argparse.ArgumentParser(description='Train on chess puzzles')
     parser.add_argument('--puzzles', type=str, required=True, help='Path to puzzles PGN file')
-    parser.add_argument('--model', type=str, default="models/policy_net.h5", help='Path to model')
+    parser.add_argument('--model', type=str, default="models/policy_net.keras", help='Path to model')
     parser.add_argument('--epochs', type=int, default=20, help='Number of training epochs')
     parser.add_argument('--save-interval', type=int, default=5, help='Save model every N epochs')
-    parser.add_argument('--output', type=str, default="models/trained_policy_net.h5", help='Output model path')
+    parser.add_argument('--output', type=str, default="models/trained_policy_net.keras", help='Output model path')
     args = parser.parse_args()
 
     trainer = PuzzleTrainer(args.model)
